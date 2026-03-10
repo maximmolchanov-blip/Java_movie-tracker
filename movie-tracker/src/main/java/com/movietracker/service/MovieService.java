@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -91,6 +92,13 @@ public class MovieService {
             if (dto.getStatus() != null) {
                 movie.setStatus(Movie.WatchStatus.valueOf(dto.getStatus()));
             }
+            if (dto.getGenres() != null) {
+                Set<Genre> genres = dto.getGenres().stream()
+                        .map(name -> genreRepository.findByName(name)
+                                .orElseGet(() -> genreRepository.save(new Genre(name))))
+                        .collect(Collectors.toSet());
+                movie.setGenres(genres);
+            }
             return MovieDto.fromEntity(movieRepository.save(movie));
         });
     }
@@ -105,6 +113,7 @@ public class MovieService {
 
     public boolean deleteMovie(Long id) {
         if (movieRepository.existsById(id)) {
+            movieRepository.deleteMovieGenresByMovieId(id);
             movieRepository.deleteById(id);
             return true;
         }
