@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 Movie Tracker</title>
+    <style>
+        :root {
+            --bg: #0b0b10;
+            --card-bg: #16161e;
+            --accent: #ff2e63;
+            --text-main: #ffffff;
+            --text-dim: #a0a0ab;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            line-height: 1.5;
+        }
+
+        header {
+            padding: 40px 20px;
+            text-align: center;
+            background: radial-gradient(circle at top, #1a1a2e 0%, var(--bg) 70%);
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(to right, #ff2e63, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .stat-chip {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            color: var(--text-dim);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px 60px;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            align-items: center;
+        }
+
+        input[type="text"], select {
+            background: #000;
+            border: 1px solid #2d2d3a;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus { border-color: var(--accent); width: 320px; }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.3s;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-2px); }
+
+        .btn-secondary { background: transparent; color: var(--text-dim); border: 1px solid #2d2d3a; }
+        .btn-secondary:hover { color: white; border-color: white; }
+
+        .movies-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 30px;
+        }
+
+        .movie-card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .movie-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-color: rgba(255, 46, 99, 0.3);
+        }
+
+        .movie-poster {
+            width: 100%;
+            aspect-ratio: 2/3;
+            object-fit: cover;
+        }
+
+        .movie-info { padding: 16px; }
+
+        .movie-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .movie-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+
+        .rating { color: #ffbd00; font-weight: 700; }
+
+        .status-badge {
+            margin-top: 12px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .status-WATCHED { color: #00ff88; }
+        .status-WATCHING { color: #00d4ff; }
+        .status-WANT_TO_WATCH { color: #ff2e63; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🎬 Movie Tracker</div>
+    <div class="stats-bar">
+        <span class="stat-chip">📽️ Всього: <span th:text="${stats['total']}">0</span></span>
+        <span class="stat-chip">✅ Переглянуто: <span th:text="${stats['watched']}">0</span></span>
+        <span class="stat-chip">▶️ Дивлюсь: <span th:text="${stats['watching']}">0</span></span>
+        <span class="stat-chip">🔖 Хочу: <span th:text="${stats['wantToWatch']}">0</span></span>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- Success message -->
+    <div class="success-msg" th:if="${success}" th:text="${success}"></div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <!-- Search -->
+        <form action="/" method="get">
+            <input type="text" name="search" placeholder="🔍 Пошук фільму..."
+                   th:value="${currentSearch}"/>
+            <button type="submit" class="btn btn-primary">Знайти</button>
+        </form>
+
+        <a href="/" class="btn btn-secondary">Всі фільми</a>
+
+        <!-- Import buttons -->
+        <button class="btn btn-import" onclick="importMovies('popular')">⬇️ Популярні з TMDB</button>
+        <button class="btn btn-import" onclick="importMovies('top-rated')">⭐ Топ-рейтинг з TMDB</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="controls">
+        <span class="filter-label">Фільтр:</span>
+
+        <div class="filter-section">
+            <form action="/" method="get">
+                <select name="status" onchange="this.form.submit()">
+                    <option value="">-- Статус --</option>
+                    <option th:each="s : ${statuses}"
+                            th:value="${s.name()}"
+                            th:text="${s.name()}"
+                            th:selected="${s.name() == currentStatus}">
+                    </option>
+                </select>
+            </form>
+
+            <form action="/" method="get">
+                <select name="genre" onchange="this.form.submit()">
+                    <option value="">-- Жанр --</option>
+                    <option th:each="g : ${genres}"
+                            th:value="${g}"
+                            th:text="${g}"
+                            th:selected="${g == currentGenre}">
+                    </option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- Movie Grid -->
+    <div class="movies-grid" th:if="${!movies.isEmpty()}">
+        <a th:each="movie : ${movies}"
+           th:href="@{/movies/{id}(id=${movie.id})}"
+           class="movie-card">
+
+            <img th:if="${movie.posterUrl != null and !movie.posterUrl.contains('no-poster')}"
+                 th:src="${movie.posterUrl}"
+                 th:alt="${movie.title}"
+                 class="movie-poster"/>
+
+            <div th:unless="${movie.posterUrl != null and !movie.posterUrl.contains('no-poster')}"
+                 class="movie-poster-placeholder">🎬</div>
+
+            <div class="movie-info">
+                <div class="movie-title" th:text="${movie.title}">Title</div>
+                <div class="movie-meta">
+                    <span th:text="${movie.releaseYear}">2024</span>
+                    <span class="rating" th:if="${movie.rating != null}">
+                        ⭐ <span th:text="${#numbers.formatDecimal(movie.rating, 1, 1)}">0.0</span>
+                    </span>
+                </div>
+                <span th:class="'status-badge status-' + ${movie.status}"
+                      th:text="${movie.status}">Status</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Empty state -->
+    <div class="empty-state" th:if="${movies.isEmpty()}">
+        <div class="icon">🎬</div>
+        <h2>Фільмів не знайдено</h2>
+        <p>Натисни "Популярні з TMDB" щоб завантажити фільми</p>
+    </div>
+</div>
+
+<script>
+    async function importMovies(type) {
+        const btn = event.target;
+        btn.disabled = true;
+        btn.textContent = '⏳ Завантаження...';
+
+        try {
+            const res = await fetch(`/api/movies/import/${type}`, { method: 'POST' });
+            const data = await res.json();
+
+            if (res.ok) {
+                alert(`✅ Імпортовано ${data.imported} нових фільмів!`);
+                location.reload();
+            } else {
+                alert(`❌ Помилка: ${data.error}`);
+                btn.disabled = false;
+                btn.textContent = type === 'popular' ? '⬇️ Популярні з TMDB' : '⭐ Топ-рейтинг з TMDB';
+            }
+        } catch (e) {
+            alert('❌ Помилка підключення до сервера');
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>

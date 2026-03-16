@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${movie.title} + ' — Movie Tracker'">Movie Detail</title>
+    <style>
+        :root {
+            --bg: #0b0b10;
+            --card-bg: #16161e;
+            --accent: #ff2e63;
+            --text-dim: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: white;
+            margin: 0;
+        }
+
+        header {
+            padding: 20px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-link { color: var(--text-dim); text-decoration: none; font-size: 0.9rem; transition: 0.3s; }
+        .back-link:hover { color: var(--accent); }
+
+        .container {
+            max-width: 1100px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        .movie-detail {
+            display: flex;
+            gap: 60px;
+            align-items: flex-start;
+        }
+
+        .poster-section {
+            flex: 0 0 350px;
+            position: sticky;
+            top: 40px;
+        }
+
+        .movie-poster {
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .info-section { flex: 1; }
+
+        .movie-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .meta-row {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+            color: var(--text-dim);
+        }
+
+        .genre-tag {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-right: 8px;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+            margin: 40px 0;
+        }
+
+        .status-form {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        select {
+            background: #000;
+            color: white;
+            border: 1px solid #334155;
+            padding: 12px;
+            border-radius: 8px;
+            flex: 1;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-danger { background: transparent; color: #ff4444; opacity: 0.6; }
+        .btn-danger:hover { opacity: 1; }
+
+        @media (max-width: 900px) {
+            .movie-detail { flex-direction: column; align-items: center; }
+            .poster-section { flex: none; width: 280px; }
+            .movie-title { font-size: 2.5rem; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo">🎬 Movie Tracker</div>
+    <a href="/" class="back-link">← Назад до списку</a>
+</header>
+
+<div class="container">
+
+    <div class="success-msg" th:if="${success}" th:text="${success}"></div>
+
+    <div class="movie-detail">
+        <div class="poster-section">
+            <img th:if="${movie.posterUrl != null and !movie.posterUrl.contains('no-poster')}"
+                 th:src="${movie.posterUrl}"
+                 th:alt="${movie.title}"
+                 class="movie-poster"/>
+            <div th:unless="${movie.posterUrl != null}"
+                 class="poster-placeholder">🎬</div>
+        </div>
+
+        <div class="info-section">
+            <h1 class="movie-title" th:text="${movie.title}">Movie Title</h1>
+
+            <div class="meta-row">
+                <div class="meta-item" th:if="${movie.releaseYear != null}">
+                    📅 <span th:text="${movie.releaseYear}">2024</span>
+                </div>
+                <div class="meta-item" th:if="${movie.rating != null}">
+                    <span class="rating">⭐ <span th:text="${#numbers.formatDecimal(movie.rating, 1, 1)}">0.0</span></span>
+                    <span>/ 10</span>
+                </div>
+            </div>
+
+            <div class="genres" th:if="${!movie.genres.isEmpty()}">
+                <span th:each="genre : ${movie.genres}"
+                      th:text="${genre}"
+                      class="genre-tag">Genre</span>
+            </div>
+
+            <!-- Слоган з HTML-парсера -->
+            <p th:if="${movie.tagline != null and !movie.tagline.isEmpty()}"
+               th:text="${movie.tagline}"
+               style="font-style: italic; color: #e94560; margin-bottom: 16px; font-size: 1rem;">Tagline</p>
+
+            <p class="description"
+               th:if="${movie.description != null and !movie.description.isEmpty()}"
+               th:text="${movie.description}">Description...</p>
+
+            <p class="description" th:if="${movie.description == null or movie.description.isEmpty()}">
+                Опис відсутній.
+            </p>
+
+            <!-- Status -->
+            <div class="section-title">Статус перегляду</div>
+
+            <div>
+                <span th:class="'status-badge status-' + ${movie.status}"
+                      th:text="${movie.status}"
+                      style="margin-bottom: 16px; display: inline-block;">Status</span>
+            </div>
+
+            <form th:action="@{/movies/{id}/status(id=${movie.id})}" method="post" class="status-form">
+                <select name="status">
+                    <option th:each="s : ${statuses}"
+                            th:value="${s.name()}"
+                            th:text="${s.name()}"
+                            th:selected="${s.name() == movie.status}">
+                    </option>
+                </select>
+                <button type="submit" class="btn btn-primary">Оновити</button>
+            </form>
+
+            <!-- Delete -->
+            <form th:action="@{/movies/{id}/delete(id=${movie.id})}" method="post"
+                  onsubmit="return confirm('Видалити цей фільм?')">
+                <button type="submit" class="btn btn-danger">🗑️ Видалити</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
